@@ -19,7 +19,7 @@
 
 # Setup redis-commander
 - name: Install redis-commander.json
-  template: src=redis-commander.json dest=/opt/valkey/ mode=0640 group=nogroup
+  template: src=redis-commander.json dest={{ valkey_config_dir }}/ mode=0640 group=nogroup
   register: redis_commander_conf
   when: enable_commander
 
@@ -38,7 +38,7 @@
       NODE_EXTRA_CA_CERTS=/example.crt
     volumes:
       - /data/example.crt:/example.crt:ro
-      - /opt/valkey/redis-commander.json:/redis-commander/config/local-production.json:ro
+      - "{{ valkey_config_dir }}/redis-commander.json:/redis-commander/config/local-production.json:ro"
   when: enable_commander
 
 - name: Restart redis-commander
@@ -46,7 +46,7 @@
   when: enable_commander and redis_commander_conf.changed
 
 - name: Install redis_exporter.config
-  template: src=redis_exporter.config dest=/opt/valkey/ mode=0640 group=nogroup
+  template: src=redis_exporter.config dest={{ valkey_config_dir }}/ mode=0640 group=nogroup
   register: redis_exporter_conf
   when: enable_exporters
 
@@ -62,7 +62,7 @@
     user: 65534:65534
     read_only: True
     volumes:
-      - /opt/valkey/redis_exporter.config:/redis_exporter.config:ro
+      - "{{ valkey_config_dir }}/redis_exporter.config:/redis_exporter.config:ro"
   when: enable_exporters
 
 - name: Restart redis_exporter

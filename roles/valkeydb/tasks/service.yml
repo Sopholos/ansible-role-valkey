@@ -7,7 +7,7 @@
     owner: nobody
   with_items:
     - "/opt/haproxy/{{service}}"
-    - "/opt/valkey/{{service}}"
+    - "{{ valkey_config_dir }}/{{service}}"
     - "/data/{{service}}/valkey"
     - "/data/{{service}}/sentinel"
 
@@ -56,20 +56,20 @@
 
 # Add configs
 - name: ">> {{service}} << Add valkey.conf"
-  template: src=valkey.conf.j2 dest=/opt/valkey/{{service}}/valkey.conf mode=0640 owner=nobody
+  template: src=valkey.conf.j2 dest={{ valkey_config_dir }}/{{service}}/valkey.conf mode=0640 owner=nobody
   register: valkey_conf
   notify: restart valkey
 
 - name: ">> {{service}} << Add sentinel.conf.j2"
-  template: src=sentinel.conf.j2 dest=/opt/valkey/{{service}}/ mode=0660 owner=sentinel
+  template: src=sentinel.conf.j2 dest={{ valkey_config_dir }}/{{service}}/ mode=0660 owner=sentinel
   register: sentinel_conf
 
 # Sentinel uses sentinel.conf to write temporary configuration like id,
 # so it will be always different from Ansible version, that's why we use tmpl instead
 - name: ">> {{service}} << Copy sentinel.conf.j2 to sentinel.conf"
   copy:
-    src: /opt/valkey/{{service}}/sentinel.conf.j2
-    dest: /opt/valkey/{{service}}/sentinel.conf
+    src: "{{ valkey_config_dir }}/{{service}}/sentinel.conf.j2"
+    dest: "{{ valkey_config_dir }}/{{service}}/sentinel.conf"
     remote_src: yes
     owner: sentinel
     mode: 0660
@@ -93,7 +93,7 @@
     read_only: True
     user: 65534
     volumes:
-      - /opt/valkey/{{service}}/valkey.conf:/etc/valkey.conf:ro
+      - "{{ valkey_config_dir }}/{{service}}/valkey.conf:/etc/valkey.conf:ro"
       - /data/{{service}}/valkey:/data:rw
   register: valkey_container
 
@@ -109,7 +109,7 @@
     read_only: True
     user: 64446
     volumes:
-      - /opt/valkey/{{service}}/sentinel.conf:/etc/sentinel.conf:rw
+      - "{{ valkey_config_dir }}/{{service}}/sentinel.conf:/etc/sentinel.conf:rw"
       - /data/{{service}}/sentinel:/data:rw
   register: sentinel_container
 
@@ -145,7 +145,7 @@
 
 # Configure roles
 - name: ">> {{service}} << Figure out current master using local python script"
-  shell: /opt/cent/bin/redis-get-master.py --db {{ service }} --srv1 {{ instances[cluster][subcluster]['srv1'] }} --srv2 {{ instances[cluster][subcluster]['srv2'] }} --srv3 {{ instances[cluster][subcluster]['srv3'] }}
+  shell: /opt/cent/bin/redis-get-master.py --config {{ valkey_config_dir }}/{{ service }}/valkey.conf --srv1 {{ instances[cluster][subcluster]['srv1'] }} --srv2 {{ instances[cluster][subcluster]['srv2'] }} --srv3 {{ instances[cluster][subcluster]['srv3'] }}
   register: current_master
   changed_when: false
 

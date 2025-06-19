@@ -5,6 +5,8 @@ domain: example.com
 slack_hook:
 slack_channel: mytestchannel
 
+valkey_config_dir: /opt/valkey
+
 # Default ports which will be used with cluster/service specific offset
 redis_port: 36379
 valkey_port: "{{ redis_port }}"

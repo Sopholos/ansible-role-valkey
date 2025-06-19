@@ -7,11 +7,9 @@ import socket
 import common_redis as common
 
 
-def get_current_master(db, srv1, srv2, srv3):
-    """Get current master."""
-    redis_conf = f'/opt/valkey/{db}/valkey.conf'
-
-    with open(redis_conf, 'r') as conf:
+def get_current_master(config, srv1, srv2, srv3):
+    """Get current master."""    
+    with open(config, 'r') as conf:
         for line in conf.readlines():
             if 'requirepass' in line:
                 password = line.split(' ')[1].rstrip()
@@ -37,14 +35,14 @@ def get_current_master(db, srv1, srv2, srv3):
 
 def main():
     """Main."""
-    parser = argparse.ArgumentParser(description='Get Redis master host')
-    parser.add_argument('--db', '-d', help='redis db name', required=True)
+    parser = argparse.ArgumentParser(description='Get Valkey master host')
+    parser.add_argument('--config', '-c', help='config file', required=True)
     parser.add_argument('--srv1', '-s1', help='server1 address', required=True)
     parser.add_argument('--srv2', '-s2', help='server2 address', required=True)
     parser.add_argument('--srv3', '-s3', help='server3 address', required=True)    
     args = parser.parse_args()
 
-    get_current_master(args.db, args.srv1, args.srv2, args.srv3)
+    get_current_master(args.config, args.srv1, args.srv2, args.srv3)
 
 
 if __name__ == '__main__':
