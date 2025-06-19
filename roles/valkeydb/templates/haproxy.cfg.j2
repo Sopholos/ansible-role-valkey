@@ -16,6 +16,12 @@ defaults
     timeout client 2147483647ms
     default-server inter 500 rise 1 fall 1 on-marked-down shutdown-sessions
 
+listen stats
+    mode http
+    bind *:{{ haproxy_stats_port }}
+    stats enable
+    stats uri /
+
 # Check 3 sentinels to see if they think srv1 is master
 backend srv1
     option tcp-check
@@ -24,8 +30,8 @@ backend srv1
     tcp-check expect string +OK
     tcp-check send PING\r\n
     tcp-check expect string +PONG
-    tcp-check send SENTINEL\ master\ default\r\n
-    tcp-check expect string {{instances[cluster][subcluster]['srv1']}}
+    tcp-check send SENTINEL\ GET-PRIMARY-ADDR-BY-NAME\ default\r\n
+    tcp-check expect string {{ lookup('community.general.dig', instances[cluster][subcluster]['srv1']) }}\r
 
     server valkey1 {{instances[cluster][subcluster]['srv1']}}:{{valkey_port + services[cluster][subcluster][service]['port_offset']}} check addr {{instances[cluster][subcluster]['srv1']}} port {{sentinel_port + services[cluster][subcluster][service]['port_offset']}}
     server valkey2 {{instances[cluster][subcluster]['srv1']}}:{{valkey_port + services[cluster][subcluster][service]['port_offset']}} check addr {{instances[cluster][subcluster]['srv2']}} port {{sentinel_port + services[cluster][subcluster][service]['port_offset']}}
@@ -40,8 +46,8 @@ backend srv2
     tcp-check expect string +OK
     tcp-check send PING\r\n
     tcp-check expect string +PONG
-    tcp-check send SENTINEL\ master\ default\r\n
-    tcp-check expect string {{instances[cluster][subcluster]['srv2']}}
+    tcp-check send SENTINEL\ GET-PRIMARY-ADDR-BY-NAME\ default\r\n
+    tcp-check expect string {{ lookup('community.general.dig', instances[cluster][subcluster]['srv2']) }}\r
 
     server valkey1 {{instances[cluster][subcluster]['srv2']}}:{{valkey_port + services[cluster][subcluster][service]['port_offset']}} check addr {{instances[cluster][subcluster]['srv1']}} port {{sentinel_port + services[cluster][subcluster][service]['port_offset']}}
     server valkey2 {{instances[cluster][subcluster]['srv2']}}:{{valkey_port + services[cluster][subcluster][service]['port_offset']}} check addr {{instances[cluster][subcluster]['srv2']}} port {{sentinel_port + services[cluster][subcluster][service]['port_offset']}}
@@ -56,8 +62,8 @@ backend srv3
     tcp-check expect string +OK
     tcp-check send PING\r\n
     tcp-check expect string +PONG
-    tcp-check send SENTINEL\ master\ default\r\n
-    tcp-check expect string {{instances[cluster][subcluster]['srv3']}}
+    tcp-check send SENTINEL\ GET-PRIMARY-ADDR-BY-NAME\ default\r\n
+    tcp-check expect string {{ lookup('community.general.dig', instances[cluster][subcluster]['srv3']) }}\r
 
     server valkey1 {{instances[cluster][subcluster]['srv3']}}:{{valkey_port + services[cluster][subcluster][service]['port_offset']}} check addr {{instances[cluster][subcluster]['srv1']}} port {{sentinel_port + services[cluster][subcluster][service]['port_offset']}}
     server valkey2 {{instances[cluster][subcluster]['srv3']}}:{{valkey_port + services[cluster][subcluster][service]['port_offset']}} check addr {{instances[cluster][subcluster]['srv2']}} port {{sentinel_port + services[cluster][subcluster][service]['port_offset']}}
