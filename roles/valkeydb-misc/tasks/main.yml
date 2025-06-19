@@ -1,6 +1,6 @@
 ---
-- include_vars: roles/valkeydb/tasks/config.yml
-- include_vars: roles/valkeydb/vars/main.yml
+# - include_vars: roles/valkeydb/tasks/config.yml
+# - include_vars: roles/valkeydb/vars/main.yml
 
 - set_fact:
     subcluster: "{{ansible_hostname|regex_replace('\\d+$', '')}}"
