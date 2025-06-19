@@ -18,6 +18,7 @@
   with_items:
     - "example.crt"
     - "example.key"
+  notify: restart haproxy
 
 # SSL certificate names that will be used for haproxy (should be single file)
 - name: ">> {{service}} << Set facts"
@@ -29,14 +30,20 @@
   shell: cat "{{crt_file}}" "{{key_file}}" > /opt/haproxy/{{service}}/example.crt.and.key.pem
   args:
     creates: /opt/haproxy/{{service}}/example.crt.and.key.pem
+  notify: restart haproxy
 
 - name: ">> {{service}} << Set permissions"
   file:
     path: /opt/haproxy/{{service}}/example.crt.and.key.pem
     owner: nobody
     mode: 0640
+  notify: restart haproxy
 
-- name: ">> {{service}} << Forward sentinel over haproxy with iptables"
+- name: ">> {{service}} << Forward sentinel over haproxy with iptables {{ valkey_port }}"
+  debug:
+    msg: "valkey_port {{ valkey_port }}"
+
+- name: ">> {{service}} << Forward sentinel over haproxy with iptables {{ valkey_port }}"
   ansible.builtin.iptables:
     table: nat
     chain: OUTPUT
@@ -49,27 +56,30 @@
 
 # Add configs
 - name: ">> {{service}} << Add valkey.conf"
-  template: src=valkey.conf dest=/opt/valkey/{{service}}/ mode=0640 owner=nobody
+  template: src=valkey.conf.j2 dest=/opt/valkey/{{service}}/valkey.conf mode=0640 owner=nobody
   register: valkey_conf
+  notify: restart valkey
 
-- name: ">> {{service}} << Add sentinel.conf.tmpl"
-  template: src=sentinel.conf.tmpl dest=/opt/valkey/{{service}}/ mode=0660 owner=sentinel
+- name: ">> {{service}} << Add sentinel.conf.j2"
+  template: src=sentinel.conf.j2 dest=/opt/valkey/{{service}}/ mode=0660 owner=sentinel
   register: sentinel_conf
 
 # Sentinel uses sentinel.conf to write temporary configuration like id,
 # so it will be always different from Ansible version, that's why we use tmpl instead
-- name: ">> {{service}} << Copy sentinel.conf.tmpl to sentinel.conf"
+- name: ">> {{service}} << Copy sentinel.conf.j2 to sentinel.conf"
   copy:
-    src: /opt/valkey/{{service}}/sentinel.conf.tmpl
+    src: /opt/valkey/{{service}}/sentinel.conf.j2
     dest: /opt/valkey/{{service}}/sentinel.conf
     remote_src: yes
     owner: sentinel
     mode: 0660
   when: sentinel_conf.changed
+  notify: restart sentinel
 
 - name: ">> {{service}} << Add haproxy.cfg"
-  template: src=haproxy.cfg dest=/opt/haproxy/{{service}}/ mode=0640 owner=nobody
+  template: src=haproxy.cfg.j2 dest=/opt/haproxy/{{service}}/haproxy.cfg mode=0640 owner=nobody
   register: haproxy_cfg
+  notify: restart haproxy
 
 - name: ">> {{service}} << Run valkey container"
   docker_container:
@@ -87,10 +97,6 @@
       - /data/{{service}}/valkey:/data:rw
   register: valkey_container
 
-- name: ">> {{service}} << Restart valkey"
-  command: docker restart valkey-{{service}}
-  when: "restart_var is defined and 'valkey' in restart_var"
-
 - name: ">> {{service}} << Run sentinel container"
   docker_container:
     name: sentinel-{{service}}
@@ -107,10 +113,6 @@
       - /data/{{service}}/sentinel:/data:rw
   register: sentinel_container
 
-- name: ">> {{service}} << Restart sentinel"
-  command: docker restart sentinel-{{service}}
-  when: "restart_var is defined and 'sentinel' in restart_var"
-
 - name: ">> {{service}} << Run haproxy container"
   docker_container:
     name: haproxy-{{service}}
@@ -126,9 +128,14 @@
       - /opt/haproxy/{{service}}/example.crt.and.key.pem:/etc/example.crt.and.key.pem:ro
   register: haproxy_container
 
-- name: ">> {{service}} << Restart haproxy"
-  command: docker restart haproxy-{{service}}
-  when: "restart_var is defined and 'haproxy' in restart_var"
+- name: ">> {{service}} << Set fact {{service}}"
+  set_fact:
+    current_service: "{{service}}"
+  tags: [always]
+
+- name: "Notify Handlers Now"
+  meta: flush_handlers
+  tags: [always]
 
 # Custom subcluster is used when we need to crete new subcluster and connect it as replicas of parent subcluster
 # in order to migrade some services from parent (original) subcluster
@@ -138,7 +145,7 @@
 
 # Configure roles
 - name: ">> {{service}} << Figure out current master using local python script"
-  shell: /opt/cent/bin/redis-get-master.py --cluster {{cluster}} --db {{service}} --subcluster {{parent_subcluster_var}}
+  shell: /opt/cent/bin/redis-get-master.py --db {{ service }} --srv1 {{ instances[cluster][subcluster]['srv1'] }} --srv2 {{ instances[cluster][subcluster]['srv2'] }} --srv3 {{ instances[cluster][subcluster]['srv3'] }}
   register: current_master
   changed_when: false
 
@@ -161,8 +168,8 @@
       /usr/bin/redis-cli -h localhost -p {{haproxy_valkey_local_port + services[cluster][subcluster][service]['port_offset']}} \
                          -a {{secrets[cluster][subcluster][service]['password']}} slaveof no one
   when:
-    - 'ansible_default_ipv4.address == current_master.stdout and ("master_link_status:up" != valkey_role.stdout)'
-    - 'ansible_default_ipv4.address == current_master.stdout and ("role:master" != valkey_role.stdout)'
+    - 'ansible_fqdn == current_master.stdout and ("master_link_status:up" != valkey_role.stdout)'
+    - 'ansible_fqdn == current_master.stdout and ("role:master" != valkey_role.stdout)'
   no_log: False
 
 - name: ">> {{service}} << Configure default slave instance"
@@ -172,6 +179,6 @@
                          slaveof {{current_master.stdout}} \
                          {{haproxy_valkey_local_port + services[cluster][subcluster][service]['port_offset']}}
   when:
-    - 'ansible_default_ipv4.address != current_master.stdout and ("master_link_status:up" != valkey_role.stdout)'
-    - 'ansible_default_ipv4.address != current_master.stdout and ("role:master" != valkey_role.stdout)'
+    - 'ansible_fqdn != current_master.stdout and ("master_link_status:up" != valkey_role.stdout)'
+    - 'ansible_fqdn != current_master.stdout and ("role:master" != valkey_role.stdout)'
   no_log: False

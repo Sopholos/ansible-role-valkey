@@ -7,7 +7,7 @@ import socket
 import common_redis as common
 
 
-def get_current_master(cluster, db, subcluster):
+def get_current_master(db, srv1, srv2, srv3):
     """Get current master."""
     redis_conf = f'/opt/valkey/{db}/valkey.conf'
 
@@ -19,18 +19,16 @@ def get_current_master(cluster, db, subcluster):
                 sentinel_port = int(line.split(' ')[1]) - 20000
 
     redis_obj = common.Redis(False, verbose=False, timeout=1)
-    hostname = socket.gethostname()
 
     # Query sentinel
-    for i in range(1, 4):
-        host = subcluster + str(i) + '.' + '.'.join(hostname.split('.')[1:])
+    for host in [srv1, srv2, srv3]:
         master_ip = redis_obj.run_command(host, sentinel_port, password, 'SENTINEL GET-MASTER-ADDR-BY-NAME default')
         if master_ip:
             break
 
     if not master_ip:
-        # Return the IP of the first db, usually srv1.
-        master_ip = socket.gethostbyname(subcluster + '1' + '.' + '.'.join(hostname.split('.')[1:]))
+        # Return the host of the first db, usually srv1.
+        master_ip = srv1
     else:
         master_ip = master_ip[0].decode()
 
@@ -39,13 +37,14 @@ def get_current_master(cluster, db, subcluster):
 
 def main():
     """Main."""
-    parser = argparse.ArgumentParser(description='Get Redis master IP')
-    parser.add_argument('--cluster', '-c', help='cluster name', required=True)
-    parser.add_argument('--subcluster', '-s', help='redis db subcluster', required=True)
+    parser = argparse.ArgumentParser(description='Get Redis master host')
     parser.add_argument('--db', '-d', help='redis db name', required=True)
+    parser.add_argument('--srv1', '-s1', help='server1 address', required=True)
+    parser.add_argument('--srv2', '-s2', help='server2 address', required=True)
+    parser.add_argument('--srv3', '-s3', help='server3 address', required=True)    
     args = parser.parse_args()
 
-    get_current_master(args.cluster, args.db, args.subcluster)
+    get_current_master(args.db, args.srv1, args.srv2, args.srv3)
 
 
 if __name__ == '__main__':
