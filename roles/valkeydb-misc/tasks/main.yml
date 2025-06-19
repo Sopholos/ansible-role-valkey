@@ -35,9 +35,9 @@
     read_only: True
     env:
       USE_SCAN=true
-      NODE_EXTRA_CA_CERTS=/example.crt
+      NODE_EXTRA_CA_CERTS=/valkey.crt
     volumes:
-      - "{{ valkey_data_dir }}/example.crt:/example.crt:ro"
+      - "{{ valkey_haproxy_crt_file }}:/valkey.crt:ro"
       - "{{ valkey_config_dir }}/redis-commander.json:/redis-commander/config/local-production.json:ro"
   when: enable_commander
 

@@ -9,6 +9,9 @@ valkey_config_dir: /opt/valkey
 valkey_haproxy_config_dir: /opt/haproxy
 valkey_data_dir: /data
 
+valkey_haproxy_crt_file: "{{ valkey_data_dir }}/example.crt"
+valkey_haproxy_key_file: "{{ valkey_data_dir }}/example.key"
+
 # Default ports which will be used with cluster/service specific offset
 redis_port: 36379
 valkey_port: "{{ redis_port }}"

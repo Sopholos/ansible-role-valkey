@@ -11,30 +11,15 @@
     - "{{ valkey_data_dir }}/{{service}}/valkey"
     - "{{ valkey_data_dir }}/{{service}}/sentinel"
 
-- name: ">> {{service}} << Copy certs"
-  copy:
-    src: "{{item}}"
-    dest: "{{ valkey_data_dir }}/"
-  with_items:
-    - "example.crt"
-    - "example.key"
-  notify: restart haproxy
-
-# SSL certificate names that will be used for haproxy (should be single file)
-- name: ">> {{service}} << Set facts"
-  set_fact:
-    crt_file: "{{ valkey_data_dir }}/example.crt"
-    key_file: "{{ valkey_data_dir }}/example.key"
-
 - name: ">> {{service}} << Merge SSL crt and private key into one file for haproxy"
-  shell: cat "{{crt_file}}" "{{key_file}}" > {{ valkey_haproxy_config_dir }}/{{service}}/example.crt.and.key.pem
+  shell: cat "{{ valkey_haproxy_crt_file }}" "{{ valkey_haproxy_key_file }}" > {{ valkey_haproxy_config_dir }}/{{ service }}/valkey.pem
   args:
-    creates: "{{ valkey_haproxy_config_dir }}/{{service}}/example.crt.and.key.pem"
+    creates: "{{ valkey_haproxy_config_dir }}/{{ service }}/valkey.pem"
   notify: restart haproxy
 
 - name: ">> {{service}} << Set permissions"
   file:
-    path: "{{ valkey_haproxy_config_dir }}/{{service}}/example.crt.and.key.pem"
+    path: "{{ valkey_haproxy_config_dir }}/{{ service }}/valkey.pem"
     owner: nobody
     mode: 0640
   notify: restart haproxy
@@ -125,7 +110,7 @@
     user: 65534
     volumes:
       - "{{ valkey_haproxy_config_dir }}/{{service}}/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro"
-      - "{{ valkey_haproxy_config_dir }}/{{service}}/example.crt.and.key.pem:/etc/example.crt.and.key.pem:ro"
+      - "{{ valkey_haproxy_config_dir }}/{{ service }}/valkey.pem:/etc/valkey.pem:ro"
   register: haproxy_container
 
 - name: ">> {{service}} << Set fact {{service}}"
