@@ -6,6 +6,7 @@ slack_hook:
 slack_channel: mytestchannel
 
 valkey_config_dir: /opt/valkey
+valkey_haproxy_config_dir: /opt/haproxy
 
 # Default ports which will be used with cluster/service specific offset
 redis_port: 36379

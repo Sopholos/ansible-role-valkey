@@ -6,7 +6,7 @@
     state: directory
     owner: nobody
   with_items:
-    - "/opt/haproxy/{{service}}"
+    - "{{ valkey_haproxy_config_dir }}/{{service}}"
     - "{{ valkey_config_dir }}/{{service}}"
     - "/data/{{service}}/valkey"
     - "/data/{{service}}/sentinel"
@@ -27,14 +27,14 @@
     key_file: /data/example.key
 
 - name: ">> {{service}} << Merge SSL crt and private key into one file for haproxy"
-  shell: cat "{{crt_file}}" "{{key_file}}" > /opt/haproxy/{{service}}/example.crt.and.key.pem
+  shell: cat "{{crt_file}}" "{{key_file}}" > {{ valkey_haproxy_config_dir }}/{{service}}/example.crt.and.key.pem
   args:
-    creates: /opt/haproxy/{{service}}/example.crt.and.key.pem
+    creates: "{{ valkey_haproxy_config_dir }}/{{service}}/example.crt.and.key.pem"
   notify: restart haproxy
 
 - name: ">> {{service}} << Set permissions"
   file:
-    path: /opt/haproxy/{{service}}/example.crt.and.key.pem
+    path: "{{ valkey_haproxy_config_dir }}/{{service}}/example.crt.and.key.pem"
     owner: nobody
     mode: 0640
   notify: restart haproxy
@@ -77,7 +77,7 @@
   notify: restart sentinel
 
 - name: ">> {{service}} << Add haproxy.cfg"
-  template: src=haproxy.cfg.j2 dest=/opt/haproxy/{{service}}/haproxy.cfg mode=0640 owner=nobody
+  template: src=haproxy.cfg.j2 dest={{ valkey_haproxy_config_dir }}/{{service}}/haproxy.cfg mode=0640 owner=nobody
   register: haproxy_cfg
   notify: restart haproxy
 
@@ -124,8 +124,8 @@
     read_only: True
     user: 65534
     volumes:
-      - /opt/haproxy/{{service}}/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
-      - /opt/haproxy/{{service}}/example.crt.and.key.pem:/etc/example.crt.and.key.pem:ro
+      - "{{ valkey_haproxy_config_dir }}/{{service}}/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro"
+      - "{{ valkey_haproxy_config_dir }}/{{service}}/example.crt.and.key.pem:/etc/example.crt.and.key.pem:ro"
   register: haproxy_container
 
 - name: ">> {{service}} << Set fact {{service}}"
