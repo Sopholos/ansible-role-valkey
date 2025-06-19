@@ -37,7 +37,7 @@
       USE_SCAN=true
       NODE_EXTRA_CA_CERTS=/example.crt
     volumes:
-      - /data/example.crt:/example.crt:ro
+      - "{{ valkey_data_dir }}/example.crt:/example.crt:ro"
       - "{{ valkey_config_dir }}/redis-commander.json:/redis-commander/config/local-production.json:ro"
   when: enable_commander
 

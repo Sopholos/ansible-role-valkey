@@ -8,13 +8,13 @@
   with_items:
     - "{{ valkey_haproxy_config_dir }}/{{service}}"
     - "{{ valkey_config_dir }}/{{service}}"
-    - "/data/{{service}}/valkey"
-    - "/data/{{service}}/sentinel"
+    - "{{ valkey_data_dir }}/{{service}}/valkey"
+    - "{{ valkey_data_dir }}/{{service}}/sentinel"
 
 - name: ">> {{service}} << Copy certs"
   copy:
     src: "{{item}}"
-    dest: /data/
+    dest: "{{ valkey_data_dir }}/"
   with_items:
     - "example.crt"
     - "example.key"
@@ -23,8 +23,8 @@
 # SSL certificate names that will be used for haproxy (should be single file)
 - name: ">> {{service}} << Set facts"
   set_fact:
-    crt_file: /data/example.crt
-    key_file: /data/example.key
+    crt_file: "{{ valkey_data_dir }}/example.crt"
+    key_file: "{{ valkey_data_dir }}/example.key"
 
 - name: ">> {{service}} << Merge SSL crt and private key into one file for haproxy"
   shell: cat "{{crt_file}}" "{{key_file}}" > {{ valkey_haproxy_config_dir }}/{{service}}/example.crt.and.key.pem
@@ -94,7 +94,7 @@
     user: 65534
     volumes:
       - "{{ valkey_config_dir }}/{{service}}/valkey.conf:/etc/valkey.conf:ro"
-      - /data/{{service}}/valkey:/data:rw
+      - "{{ valkey_data_dir }}/{{service}}/valkey:/data:rw"
   register: valkey_container
 
 - name: ">> {{service}} << Run sentinel container"
@@ -110,7 +110,7 @@
     user: 64446
     volumes:
       - "{{ valkey_config_dir }}/{{service}}/sentinel.conf:/etc/sentinel.conf:rw"
-      - /data/{{service}}/sentinel:/data:rw
+      - "{{ valkey_data_dir }}/{{service}}/sentinel:/data:rw"
   register: sentinel_container
 
 - name: ">> {{service}} << Run haproxy container"

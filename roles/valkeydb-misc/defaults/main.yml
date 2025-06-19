@@ -1,1 +1,2 @@
 valkey_config_dir: /opt/valkey
+valkey_data_dir: /data
