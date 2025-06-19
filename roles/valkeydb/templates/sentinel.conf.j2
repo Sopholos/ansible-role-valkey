@@ -6,3 +6,7 @@ sentinel monitor default {{instances[cluster][subcluster]['srv1']}} {{valkey_por
 sentinel down-after-milliseconds default 5000
 sentinel parallel-syncs default 2
 sentinel auth-pass default {{secrets[cluster][subcluster][service]['password']}}
+sentinel resolve-hostnames yes
+
+sentinel announce-ip {{ ansible_fqdn }}
+sentinel announce-port {{sentinel_port + services[cluster][subcluster][service]['port_offset']}}
