@@ -1,0 +1,12 @@
+---
+- name: restart valkey {{current_service}}
+  command: docker restart valkey-{{current_service}}
+  listen: restart valkey
+
+- name: restart sentinel {{current_service}}
+  command: docker restart sentinel-{{current_service}}
+  listen: restart sentinel
+
+- name: restart haproxy {{current_service}}
+  command: docker restart haproxy-{{current_service}}
+  listen: restart haproxy
