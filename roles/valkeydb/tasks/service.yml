@@ -134,9 +134,16 @@
   register: current_master
   changed_when: false
 
+- set_fact:
+    current_master: "{{ current_master.stdout }}"
+    current_master_ip: "{{ current_master.stdout }}"
+
+- set_fact:
+    current_master_ip: "{{ lookup('community.general.dig', current_master) }}"
+
 - name: ">> {{service}} << Show master"
   debug:
-    msg: "Current master is {{current_master.stdout}}"
+    msg: "Current master is {{ current_master }}/{{ current_master_ip }}"
 
 - name: ">> {{service}} << Check if node is configured as master/slave"
   shell: |
@@ -148,22 +155,22 @@
   changed_when: false
   no_log: False
 
-- name: ">> {{service}} << Configure default master instance"
+- name: ">> {{ service }} << Configure default master instance"
   command: |
-      /usr/bin/redis-cli -h localhost -p {{haproxy_valkey_local_port + services[cluster][subcluster][service]['port_offset']}} \
-                         -a {{secrets[cluster][subcluster][service]['password']}} slaveof no one
+      /usr/bin/redis-cli -h localhost -p {{ haproxy_valkey_local_port + services[cluster][subcluster][service]['port_offset']}} \
+                         -a {{ secrets[cluster][subcluster][service]['password']}} slaveof no one
   when:
-    - 'ansible_fqdn == current_master.stdout and ("master_link_status:up" != valkey_role.stdout)'
-    - 'ansible_fqdn == current_master.stdout and ("role:master" != valkey_role.stdout)'
+    - '(ansible_fqdn == current_master or ansible_default_ipv4.address == current_master_ip) and ("master_link_status:up" != valkey_role.stdout)'
+    - '(ansible_fqdn == current_master or ansible_default_ipv4.address == current_master_ip) and ("role:master" != valkey_role.stdout)'
   no_log: False
 
-- name: ">> {{service}} << Configure default slave instance"
+- name: ">> {{ service }} << Configure default slave instance"
   command: |
-      /usr/bin/redis-cli -h localhost -p {{haproxy_valkey_local_port + services[cluster][subcluster][service]['port_offset']}} \
-                         -a {{secrets[cluster][subcluster][service]['password']}} \
-                         slaveof {{current_master.stdout}} \
-                         {{haproxy_valkey_local_port + services[cluster][subcluster][service]['port_offset']}}
+      /usr/bin/redis-cli -h localhost -p {{ haproxy_valkey_local_port + services[cluster][subcluster][service]['port_offset'] }} \
+                         -a {{ secrets[cluster][subcluster][service]['password']}} \
+                         slaveof {{ current_master }} \
+                         {{ haproxy_valkey_local_port + services[cluster][subcluster][service]['port_offset'] }}
   when:
-    - 'ansible_fqdn != current_master.stdout and ("master_link_status:up" != valkey_role.stdout)'
-    - 'ansible_fqdn != current_master.stdout and ("role:master" != valkey_role.stdout)'
+    - 'ansible_fqdn != current_master and ansible_default_ipv4.address != current_master_ip and ("master_link_status:up" != valkey_role.stdout)'
+    - 'ansible_fqdn != current_master and ansible_default_ipv4.address != current_master_ip and ("role:master" != valkey_role.stdout)'
   no_log: False
