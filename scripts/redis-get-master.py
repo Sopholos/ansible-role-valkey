@@ -20,7 +20,7 @@ def get_current_master(config, srv1, srv2, srv3):
 
     # Query sentinel
     for host in [srv1, srv2, srv3]:
-        master_ip = redis_obj.run_command(host, sentinel_port, password, 'SENTINEL GET-MASTER-ADDR-BY-NAME default')
+        master_ip = redis_obj.run_command(host, sentinel_port, password, 'SENTINEL GET-PRIMARY-ADDR-BY-NAME default')
         if master_ip:
             break
 

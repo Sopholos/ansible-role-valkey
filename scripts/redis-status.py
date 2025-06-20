@@ -78,7 +78,7 @@ def show_status(args, subcluster, config, secrets):
                 continue
 
             # Sentinel via HAProxy SSL.
-            sentinel_info[host] = redis_obj.run_command(host, sentinel_port, password, 'SENTINEL GET-MASTER-ADDR-BY-NAME default')
+            sentinel_info[host] = redis_obj.run_command(host, sentinel_port, password, 'SENTINEL GET-PRIMARY-ADDR-BY-NAME default')
             sentinel_sentinels[host] = redis_obj.run_command(host, sentinel_port, password, 'SENTINEL SENTINELS default')
 
         print(f'{db:25}', end='')

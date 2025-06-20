@@ -80,7 +80,7 @@ def do_failover(cluster, subcluster, db, enable_fe, disable_fe, target_subcluste
     print('Getting current master...')
     for host in ip_hosts.values():
         # Query sentinel one by one until first response.
-        master_ip = redis_obj.run_command(host, sentinel_port, password, 'SENTINEL GET-MASTER-ADDR-BY-NAME default')
+        master_ip = redis_obj.run_command(host, sentinel_port, password, 'SENTINEL GET-PRIMARY-ADDR-BY-NAME default')
         if master_ip:
             break
 
