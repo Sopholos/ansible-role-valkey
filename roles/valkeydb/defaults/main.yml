@@ -13,6 +13,9 @@ valkey_log_dir: /var/log/valkey
 valkey_haproxy_crt_file: "{{ valkey_data_dir }}/example.crt"
 valkey_haproxy_key_file: "{{ valkey_data_dir }}/example.key"
 
+valkey_default_acl: "~* &* +@all"
+valkey_users_acl: ""
+
 # Default ports which will be used with cluster/service specific offset
 redis_port: 36379
 valkey_port: "{{ redis_port }}"
@@ -59,6 +62,10 @@ services:
       default:
         port_offset: 0
         maxmemory: 400mb
+        users:
+          user:
+            acl: ~user_* +@sortedset +ping +scan +set +get
+
   #     dev:
   #       port_offset: 1
   #       maxmemory: 150mb
@@ -88,7 +95,10 @@ secrets:
   testcluster1:
     valkeydb-mytest:
       default:
-        password: testpass1
+        password: testpass1        
+        users:
+          - { login: user, password: pass }
+
   #     dev:
   #       password: testpass2
   #     qa:

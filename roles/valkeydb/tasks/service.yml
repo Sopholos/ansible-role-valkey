@@ -46,6 +46,13 @@
   register: valkey_conf
   notify: restart valkey
 
+# Add configs
+- name: ">> {{service}} << Add users.acl"
+  template: src=users.acl.j2 dest={{ valkey_data_dir }}/{{service}}/valkey/users.acl mode=0640 owner=nobody
+  register: valkey_conf
+  notify: restart valkey
+  no_log: true
+
 - name: ">> {{service}} << Add sentinel.conf.j2"
   template: src=sentinel.conf.j2 dest={{ valkey_config_dir }}/{{service}}/ mode=0660 owner=sentinel
   register: sentinel_conf
@@ -82,7 +89,6 @@
       - "{{ valkey_config_dir }}/{{service}}/valkey.conf:/etc/valkey.conf:ro"
       - "{{ valkey_data_dir }}/{{service}}/valkey:/data:rw"
       - "{{ valkey_log_dir }}:/valkey_log:rw"
-      
   register: valkey_container
 
 - name: ">> {{service}} << Run sentinel container"

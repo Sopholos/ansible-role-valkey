@@ -1,0 +1,4 @@
+user default on >{{ secrets[cluster][subcluster][service]['password'] }} resetkeys {{ valkey_default_acl }}
+{% for user in secrets[cluster][subcluster][service]['users'] %}
+user {{ user.login }} on >{{ user.password }} resetkeys {{ services[cluster][subcluster][service]['users'][user.login]['acl'] }}
+{% endfor %}

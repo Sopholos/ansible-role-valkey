@@ -3,6 +3,8 @@ port {{valkey_port + services[cluster][subcluster][service]['port_offset']}}
 requirepass {{secrets[cluster][subcluster][service]['password']}}
 masterauth {{secrets[cluster][subcluster][service]['password']}}
 
+aclfile /data/users.acl
+
 loglevel NOTICE
 logfile /valkey_log/valkey-server.log
 
