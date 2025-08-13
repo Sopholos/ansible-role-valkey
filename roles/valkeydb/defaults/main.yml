@@ -8,6 +8,7 @@ slack_channel: mytestchannel
 valkey_config_dir: /opt/valkey
 valkey_haproxy_config_dir: /opt/haproxy
 valkey_data_dir: /data
+valkey_log_dir: /var/log/valkey
 
 valkey_haproxy_crt_file: "{{ valkey_data_dir }}/example.crt"
 valkey_haproxy_key_file: "{{ valkey_data_dir }}/example.key"

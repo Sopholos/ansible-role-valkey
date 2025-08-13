@@ -10,6 +10,7 @@
     - "{{ valkey_config_dir }}/{{service}}"
     - "{{ valkey_data_dir }}/{{service}}/valkey"
     - "{{ valkey_data_dir }}/{{service}}/sentinel"
+    - "{{ valkey_log_dir }}"
 
 - name: ">> {{service}} << Merge SSL crt and private key into one file for haproxy"
   shell: cat "{{ valkey_haproxy_crt_file }}" "{{ valkey_haproxy_key_file }}" > {{ valkey_haproxy_config_dir }}/{{ service }}/valkey.pem
@@ -80,6 +81,8 @@
     volumes:
       - "{{ valkey_config_dir }}/{{service}}/valkey.conf:/etc/valkey.conf:ro"
       - "{{ valkey_data_dir }}/{{service}}/valkey:/data:rw"
+      - "{{ valkey_log_dir }}:/valkey_log:rw"
+      
   register: valkey_container
 
 - name: ">> {{service}} << Run sentinel container"
