@@ -40,6 +40,13 @@
     to_destination: ":{{haproxy_valkey_local_port + services[cluster][subcluster][service]['port_offset']}}"
     comment: "iptables_sentinel_forward_{{valkey_port + services[cluster][subcluster][service]['port_offset']}}"
 
+- set_fact:
+    __current_host: "{{ ansible_default_ipv4.address }}"
+
+- set_fact:
+    __current_host: "{{ ansible_fqdn }}."
+  when: valkey_fqdn is defined and valkey_fqdn == true
+
 # Add configs
 - name: ">> {{service}} << Add valkey.conf"
   template: src=valkey.conf.j2 dest={{ valkey_config_dir }}/{{service}}/valkey.conf mode=0640 owner=nobody
@@ -169,8 +176,8 @@
       /usr/bin/redis-cli -h localhost -p {{ haproxy_valkey_local_port + services[cluster][subcluster][service]['port_offset']}} \
                          -a {{ secrets[cluster][subcluster][service]['password']}} slaveof no one
   when:
-    - '(ansible_fqdn == current_master or ansible_default_ipv4.address == current_master_ip) and ("master_link_status:up" != valkey_role.stdout)'
-    - '(ansible_fqdn == current_master or ansible_default_ipv4.address == current_master_ip) and ("role:master" != valkey_role.stdout)'
+    - '(ansible_fqdn == current_master or __current_host == current_master or ansible_default_ipv4.address == current_master_ip) and ("master_link_status:up" != valkey_role.stdout)'
+    - '(ansible_fqdn == current_master or __current_host == current_master or ansible_default_ipv4.address == current_master_ip) and ("role:master" != valkey_role.stdout)'
   no_log: False
 
 - name: ">> {{ service }} << Configure default slave instance"
@@ -180,6 +187,6 @@
                          slaveof {{ current_master }} \
                          {{ haproxy_valkey_local_port + services[cluster][subcluster][service]['port_offset'] }}
   when:
-    - 'ansible_fqdn != current_master and ansible_default_ipv4.address != current_master_ip and ("master_link_status:up" != valkey_role.stdout)'
-    - 'ansible_fqdn != current_master and ansible_default_ipv4.address != current_master_ip and ("role:master" != valkey_role.stdout)'
+    - 'ansible_fqdn != current_master and __current_host != current_master and ansible_default_ipv4.address != current_master_ip and ("master_link_status:up" != valkey_role.stdout)'
+    - 'ansible_fqdn != current_master and __current_host != current_master and ansible_default_ipv4.address != current_master_ip and ("role:master" != valkey_role.stdout)'
   no_log: False

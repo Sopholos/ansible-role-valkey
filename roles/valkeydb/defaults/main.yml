@@ -27,6 +27,7 @@ haproxy_valkey_local_ssl_port: 56379
 haproxy_valkey_ssl_port: 6379
 haproxy_sentinel_ssl_port: 16379
 
+valkey_fqdn: true
 # Cluster > subcluster > instance.
 # DNS: <subcluster>N.<cluster>.example.com. Example: valkeydb1.testcluster1.example.com
 # All subcluster names should start with "valkeydb". Default subcluster name is valkeydb.
