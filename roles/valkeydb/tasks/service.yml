@@ -44,7 +44,7 @@
     __current_host: "{{ ansible_default_ipv4.address }}"
 
 - set_fact:
-    __current_host: "{{ ansible_fqdn }}."
+    __current_host: "{{ ansible_fqdn }}"
   when: valkey_fqdn is defined and valkey_fqdn == true
 
 # Add configs

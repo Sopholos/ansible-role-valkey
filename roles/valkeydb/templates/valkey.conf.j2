@@ -15,7 +15,15 @@ min-slaves-to-write 1
 rdbchecksum yes
 rdbcompression yes
 
-repl-diskless-sync yes
+{% if services[cluster][subcluster][service]['client-output-buffer-limit'] is defined %}
+client-output-buffer-limit {{ services[cluster][subcluster][service]['client-output-buffer-limit'] }}
+{% endif %}        
+
+{% if services[cluster][subcluster][service]['repl-backlog-size'] is defined %}
+repl-backlog-size {{ services[cluster][subcluster][service]['repl-backlog-size'] }}
+{% endif %}
+
+repl-diskless-sync {{ services[cluster][subcluster][service]['repl-diskless-sync'] | default('yes') }}
 repl-diskless-sync-delay 5
 
 # Latency monitor (like slow log) ms
